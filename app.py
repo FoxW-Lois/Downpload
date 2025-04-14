@@ -12,74 +12,88 @@ conn = sqlite3.connect("downloads.db")
 c = conn.cursor()
 
 c.execute('''
-    CREATE TABLE IF NOT EXISTS downloads (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT,
-        url TEXT,
-        format TEXT,
-        path TEXT,
-        date TEXT
-    )
+	CREATE TABLE IF NOT EXISTS downloads (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		title TEXT,
+		url TEXT,
+		format TEXT,
+		path TEXT,
+		date TEXT
+	)
 ''')
 conn.commit()
 
 def log_download(title, url, format_type, path):
-    date_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    c.execute('''
-        INSERT INTO downloads (title, url, format, path, date)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (title, url, format_type, path, date_now))
-    conn.commit()
+	date_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+	c.execute('''
+		INSERT INTO downloads (title, url, format, path, date)
+		VALUES (?, ?, ?, ?, ?)
+	''', (title, url, format_type, path, date_now))
+	conn.commit()
 
 # --- Fonction principale de téléchargement ---
 def download_video(url, path, audio_only):
-    try:
-        yt = YouTube(url)
-        title = yt.title
+	try:
+		yt = YouTube(url)
+		title = yt.title
 
-        if audio_only:
-            stream = yt.streams.get_audio_only()
-            downloaded_file = stream.download(output_path=path)
+		if audio_only:
+			stream = yt.streams.get_audio_only()
+			downloaded_file = stream.download(output_path=path)
 
-            base, _ = os.path.splitext(downloaded_file)
-            mp3_file = base + ".mp3"
+			base, _ = os.path.splitext(downloaded_file)
+			mp3_file = base + ".mp3"
 
-            audio = AudioSegment.from_file(downloaded_file, format="m4a")
-            audio.export(mp3_file, format="mp3")
-            os.remove(downloaded_file)
+			audio = AudioSegment.from_file(downloaded_file, format="m4a")
+			audio.export(mp3_file, format="mp3")
+			os.remove(downloaded_file)
 
-            log_download(title, url, "Audio", mp3_file)
-            messagebox.showinfo("Succès", "Fichier MP3 téléchargé et converti avec succès !")
+			log_download(title, url, "Audio", mp3_file)
+			messagebox.showinfo("Succès", "Fichier MP3 téléchargé et converti avec succès !")
 
-        else:
-            stream = yt.streams.get_highest_resolution()
-            final_path = stream.download(output_path=path)
+		else:
+			stream = yt.streams.get_highest_resolution()
+			final_path = stream.download(output_path=path)
 
-            log_download(title, url, "Video", final_path)
-            messagebox.showinfo("Succès", "Fichier MP4 téléchargé avec succès !")
+			log_download(title, url, "Video", final_path)
+			messagebox.showinfo("Succès", "Fichier MP4 téléchargé avec succès !")
 
-    except Exception as e:
-        messagebox.showerror("Erreur", f"Téléchargement échoué: {e}")
+	except Exception as e:
+		messagebox.showerror("Erreur", f"Téléchargement échoué: {e}")
 
 # --- Autres fonctions ---
 def start_download(audio_only):
-    url = url_entry.get()
-    path = path_entry.get()
-    if url and path:
-        download_video(url, path, audio_only)
-    else:
-        messagebox.showwarning("Attention", "Veuillez fournir une URL et un chemin de téléchargement.")
+	url = url_entry.get()
+	path = path_entry.get()
+	if url and path:
+		download_video(url, path, audio_only)
+	else:
+		messagebox.showwarning("Attention", "Veuillez fournir une URL et un chemin de téléchargement.")
 
 def browse_folder():
-    folder_selected = filedialog.askdirectory()
-    path_entry.delete(0, tk.END)
-    path_entry.insert(0, folder_selected)
+	folder_selected = filedialog.askdirectory()
+	path_entry.delete(0, tk.END)
+	path_entry.insert(0, folder_selected)
+
+
+# --- Mise à jour du compteur ---
+def update_counter():
+	c.execute("SELECT COUNT(*) FROM downloads")
+	total = c.fetchone()[0]
+
+	c.execute("SELECT COUNT(*) FROM downloads WHERE format = 'Video'")
+	videos = c.fetchone()[0]
+
+	c.execute("SELECT COUNT(*) FROM downloads WHERE format = 'Audio'")
+	audios = c.fetchone()[0]
+
+	counter_var.set(f"Total : {total}\nVidéos : {videos}\nMusiques : {audios}")
 
 
 # --- Interface graphique ---
 root = tk.Tk()
 root.title("DownPload - YouTube Downloader")
-root.geometry("400x400")
+root.geometry("400x430")
 root.resizable(False, False)
 
 # Frame pour l'entête
@@ -131,10 +145,18 @@ browse_button = ttk.Button(root, text="Parcourir", command=browse_folder)
 browse_button.pack(pady=5)
 
 download_btn = ttk.Button(
-    root, text="Télécharger",
-    command=lambda: start_download(audio_only=(format_var.get() == "Audio"))
+	root, text="Télécharger",
+	command=lambda: start_download(audio_only=(format_var.get() == "Audio"))
 )
-download_btn.pack(pady=30)
+download_btn.pack(pady=(30,0))
+
+# --- Compteur de téléchargements ---
+counter_var = tk.StringVar()
+counter_label = tk.Label(root, textvariable=counter_var, font=("Arial", 9), anchor="w", justify="left")
+counter_label.pack(side="bottom", anchor="w", padx=10, pady=5)
+
+# Mise à jour initiale
+update_counter()
 
 root.mainloop()
 
