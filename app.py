@@ -49,6 +49,7 @@ def download_video(url, path, audio_only):
 			os.remove(downloaded_file)
 
 			log_download(title, url, "Audio", mp3_file)
+			update_counter()
 			messagebox.showinfo("Succès", "Fichier MP3 téléchargé et converti avec succès !")
 
 		else:
@@ -56,6 +57,7 @@ def download_video(url, path, audio_only):
 			final_path = stream.download(output_path=path)
 
 			log_download(title, url, "Video", final_path)
+			update_counter()
 			messagebox.showinfo("Succès", "Fichier MP4 téléchargé avec succès !")
 
 	except Exception as e:
@@ -88,6 +90,32 @@ def update_counter():
 	audios = c.fetchone()[0]
 
 	counter_var.set(f"Total : {total}\nVidéos : {videos}\nMusiques : {audios}")
+
+# --- Fonction pour l'historique ---
+def show_history():
+	history_window = tk.Toplevel(root)
+	history_window.title("Historique des téléchargements")
+	history_window.geometry("800x350")
+	history_window.iconphoto(False, render)
+
+	tree = ttk.Treeview(history_window, columns=("Titre", "Format", "Date", "Chemin"), show="headings")
+	tree.heading("Titre", text="Titre")
+	tree.heading("Format", text="Format")
+	tree.heading("Date", text="Date")
+	tree.heading("Chemin", text="Chemin")
+
+	# Colonnes taille adaptative
+	tree.column("Titre", width=160)
+	tree.column("Format", width=80)
+	tree.column("Date", width=120)
+	tree.column("Chemin", width=340)
+
+	c.execute("SELECT title, format, date, path FROM downloads ORDER BY date DESC")
+	rows = c.fetchall()
+	for row in rows:
+		tree.insert("", tk.END, values=row)
+
+	tree.pack(fill="both", expand=True, padx=10, pady=10)
 
 
 # --- Interface graphique ---
@@ -150,10 +178,17 @@ download_btn = ttk.Button(
 )
 download_btn.pack(pady=(30,0))
 
-# --- Compteur de téléchargements ---
+# --- Footer avec compteur et bouton historique ---
+footer_frame = tk.Frame(root)
+footer_frame.pack(side="bottom", fill="x", pady=5, padx=10)
+
 counter_var = tk.StringVar()
-counter_label = tk.Label(root, textvariable=counter_var, font=("Arial", 9), anchor="w", justify="left")
-counter_label.pack(side="bottom", anchor="w", padx=10, pady=5)
+counter_label = tk.Label(footer_frame, textvariable=counter_var, font=("Arial", 9), anchor="w", justify="left")
+counter_label.pack(side="left")
+
+history_button = ttk.Button(footer_frame, text="Historique", command=show_history)
+history_button.pack(side="right")
+
 
 # Mise à jour initiale
 update_counter()
