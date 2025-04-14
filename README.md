@@ -4,7 +4,8 @@ DownPload est une petite application de bureau en Python (Tkinter) permettant de
 Une base de données SQLite intégrée garde la trace de tous vos téléchargements 📊.
 
 **Attention les vidéos ne sont pour l'instant téléchargeables qu'en 360p !**
-**Dû à Pytubefix qui n'est pas encore à jour au 14/04/2025, l'application bureau tourne au maximum avec Python 3.12.2**
+
+***Dû à Pytubefix qui n'est pas encore à jour au 14/04/2025, l'application bureau tourne au maximum avec Python 3.12.2***
 
 ---
 
