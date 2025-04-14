@@ -6,6 +6,7 @@ from PIL import Image, ImageTk
 import os
 import sqlite3
 from datetime import datetime
+import subprocess
 
 # --- Base de données ---
 conn = sqlite3.connect("downloads.db")
@@ -32,7 +33,7 @@ def log_download(title, url, format_type, path):
 	conn.commit()
 
 # --- Fonction principale de téléchargement ---
-def download_video(url, path, audio_only):
+def download_video(url, path, audio_only, format_source):
 	try:
 		yt = YouTube(url)
 		title = yt.title
@@ -53,24 +54,56 @@ def download_video(url, path, audio_only):
 			messagebox.showinfo("Succès", "Fichier MP3 téléchargé et converti avec succès !")
 
 		else:
-			stream = yt.streams.get_highest_resolution()
-			final_path = stream.download(output_path=path)
+			# Récupère la résolution vidéo choisie
+			format = format_source.split(" ")[-1]
+			
+			# Télécharger l'image et l'audio séparément
+			video_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True, res=format).first()
+			audio_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).first()
 
-			log_download(title, url, "Video", final_path)
+			if not video_stream or not audio_stream:
+				raise Exception("Flux vidéo ", format, " ou audio introuvable.")
+
+			video_path = video_stream.download(output_path=path, filename="temp_video.mp4")
+			audio_path = audio_stream.download(output_path=path, filename="temp_audio.mp4")
+
+			output_path = os.path.join(path, f"{yt.title}.mp4")
+
+			# Fusionner avec ffmpeg
+			cmd = [
+				"ffmpeg",
+				"-i", video_path,
+				"-i", audio_path,
+				"-c:v", "copy",
+				"-c:a", "aac",
+				"-strict", "experimental",
+				output_path
+			]
+			subprocess.run(cmd, check=True)
+
+			# Nettoyer les fichiers temporaires
+			os.remove(video_path)
+			os.remove(audio_path)
+
+			log_download(title, url, format_source, output_path)
 			update_counter()
-			messagebox.showinfo("Succès", "Fichier MP4 téléchargé avec succès !")
+			messagebox.showinfo("Succès", f"Vidéo téléchargée en {format} avec succès !")
 
 	except Exception as e:
 		messagebox.showerror("Erreur", f"Téléchargement échoué: {e}")
 
 # --- Autres fonctions ---
-def start_download(audio_only):
+def start_download():
 	url = url_entry.get()
 	path = path_entry.get()
+	selected_format = format_var.get()
+
 	if url and path:
-		download_video(url, path, audio_only)
+		audio_only = (selected_format == "Audio")
+		download_video(url, path, audio_only, selected_format)
 	else:
 		messagebox.showwarning("Attention", "Veuillez fournir une URL et un chemin de téléchargement.")
+
 
 def browse_folder():
 	folder_selected = filedialog.askdirectory()
@@ -83,7 +116,7 @@ def update_counter():
 	c.execute("SELECT COUNT(*) FROM downloads")
 	total = c.fetchone()[0]
 
-	c.execute("SELECT COUNT(*) FROM downloads WHERE format = 'Video'")
+	c.execute("SELECT COUNT(*) FROM downloads WHERE format IN ('Video 240p', 'Video 360p', 'Video 480p', 'Video 720p', 'Video 1080p')")
 	videos = c.fetchone()[0]
 
 	c.execute("SELECT COUNT(*) FROM downloads WHERE format = 'Audio'")
@@ -158,8 +191,8 @@ url_entry.pack(pady=5)
 # Choix du format
 format_label = tk.Label(root, text="Format :")
 format_label.pack(pady=(20,0))
-format_var = tk.StringVar(value="Video")
-format_choice = ttk.Combobox(root, textvariable=format_var, values=["Video", "Audio"])
+format_var = tk.StringVar(value="Video 1080p")
+format_choice = ttk.Combobox(root, textvariable=format_var, values=["Audio", "Video 240p", "Video 360p", "Video 480p", "Video 720p", "Video 1080p"])
 format_choice.pack(pady=5)
 
 # Entrée pour chemin de téléchargement
@@ -174,7 +207,7 @@ browse_button.pack(pady=5)
 
 download_btn = ttk.Button(
 	root, text="Télécharger",
-	command=lambda: start_download(audio_only=(format_var.get() == "Audio"))
+	command=start_download
 )
 download_btn.pack(pady=(30,0))
 
