@@ -7,6 +7,7 @@ import os
 import sqlite3
 from datetime import datetime
 import subprocess
+import re
 
 # --- Base de données ---
 conn = sqlite3.connect("downloads.db")
@@ -36,7 +37,7 @@ def log_download(title, url, format_type, path):
 def download_video(url, path, audio_only, format_source):
 	try:
 		yt = YouTube(url)
-		title = yt.title
+		title = re.sub(r'[\\/:*?"<>|]', '', yt.title)
 
 		if audio_only:
 			stream = yt.streams.get_audio_only()
@@ -46,7 +47,7 @@ def download_video(url, path, audio_only, format_source):
 			mp3_file = base + ".mp3"
 
 			audio = AudioSegment.from_file(downloaded_file, format="m4a")
-			audio.export(mp3_file, format="mp3")
+			audio.export(mp3_file, format="mp3", bitrate="320k")
 			os.remove(downloaded_file)
 
 			log_download(title, url, "Audio", mp3_file)
@@ -56,7 +57,7 @@ def download_video(url, path, audio_only, format_source):
 		else:
 			# Récupère la résolution vidéo choisie
 			format = format_source.split(" ")[-1]
-			
+
 			# Télécharger l'image et l'audio séparément
 			video_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True, res=format).first()
 			audio_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).first()
@@ -67,15 +68,21 @@ def download_video(url, path, audio_only, format_source):
 			video_path = video_stream.download(output_path=path, filename="temp_video.mp4")
 			audio_path = audio_stream.download(output_path=path, filename="temp_audio.mp4")
 
-			output_path = os.path.join(path, f"{yt.title}.mp4")
+			base_audio, _ = os.path.splitext(audio_path)
+			converted_audio_file = base_audio + "_320.mp3"
+			audio = AudioSegment.from_file(audio_path, format="mp4")
+			audio.export(converted_audio_file, format="mp3", bitrate="320k")
+
+			output_path = os.path.join(path, f"{title}.mp4")
 
 			# Fusionner avec ffmpeg
 			cmd = [
 				"ffmpeg",
 				"-i", video_path,
-				"-i", audio_path,
+				"-i", converted_audio_file,
 				"-c:v", "copy",
 				"-c:a", "aac",
+				"-b:a", "320k",
 				"-strict", "experimental",
 				output_path
 			]
@@ -84,6 +91,7 @@ def download_video(url, path, audio_only, format_source):
 			# Nettoyer les fichiers temporaires
 			os.remove(video_path)
 			os.remove(audio_path)
+			os.remove(converted_audio_file)
 
 			log_download(title, url, format_source, output_path)
 			update_counter()

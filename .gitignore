@@ -161,3 +161,4 @@ cython_debug/
 
 downloads.db
 test.py
+dl_clip_twitch-avorted.py.txt
