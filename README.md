@@ -85,6 +85,21 @@ L'application crée un fichier `downloads.db` qui enregistre automatiquement :
 
 ---
 
+### 3. Créer une nouvelle version de l'application en .exe
+Ajouter les packages PyInstaller si besoin :
+```bash
+pip install pyinstaller
+```
+
+Puis pour compiler une nouvelle version du projet en .exe  :
+```bash
+pyinstaller --onefile --noconsole --icon=icon.ico --add-data "icon.png;." app.py
+```
+Le nouveau build se trouve dans le dossier `dist` avec le nom `app.exe`. Il faut donc penser à le renommer en `downpload.exe`.
+Pour le lancement de l'application, il faut donc lancer le fichier `Downpload.exe`, en incluant dans le dossier racine les fichiers `icon.png` et `icon.ico`. Il est aussi nécessaire d'installer l'outil `ffmpeg` (comprenant de base ffprobe) sur l'ordinateur, et d'inclure l'outil dans les variables d'environnement (voir la section README consacrée plus haut).
+
+---
+
 ## 📸 Aperçu
 
 ![Screenshot de l'application](downpload.png)

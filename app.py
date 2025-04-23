@@ -186,9 +186,11 @@ header_text.pack(side="left")
 
 # Icon de l'application
 path = "icon.png"
+icon_path = "icon.ico"
 load = Image.open(path)
 render = ImageTk.PhotoImage(load)
 root.iconphoto(False, render)
+root.iconbitmap(icon_path)
 
 # Entrée pour URL
 url_label = tk.Label(root, text="URL de la vidéo YouTube :")
