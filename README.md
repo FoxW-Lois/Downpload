@@ -50,7 +50,7 @@ pillow
 
 ---
 
-## 🔧 Installation de `ffmpeg` (obligatoire pour l'audio)
+## 🔧 Installation de `ffmpeg` (obligatoire pour le téléchargement audio et vidéo)
 
 La conversion en MP3 nécessite `ffmpeg`, un outil puissant de traitement audio/vidéo. Voici comment l'installer :
 
