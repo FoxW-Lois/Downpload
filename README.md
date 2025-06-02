@@ -3,15 +3,13 @@
 DownPload est une petite application de bureau en Python (Tkinter) permettant de télécharger facilement des vidéos ou de la musique depuis YouTube, au format MP4 ou MP3.  
 Une base de données SQLite intégrée garde la trace de tous vos téléchargements 📊.
 
-**Attention les vidéos ne sont pour l'instant téléchargeables qu'en 360p !**
-
 ***Dû à Pytubefix qui n'est pas encore à jour au 14/04/2025, l'application bureau tourne au maximum avec Python 3.12.2***
 
 ---
 
 ## ⚙️ Fonctionnalités
 
-- Téléchargement de vidéos YouTube en qualité maximale (MP4)
+- Téléchargement de vidéos YouTube en qualité maximale (1080p en MP4)
 - Téléchargement d'audio uniquement, avec conversion en MP3 (via `ffmpeg`)
 - Interface simple et intuitive avec `Tkinter`
 - Historique automatique des téléchargements (SQLite)
