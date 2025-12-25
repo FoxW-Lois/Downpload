@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from pytubefix import YouTube
+from pytubefix import Playlist, YouTube
 from pydub import AudioSegment
 from PIL import Image, ImageTk
 import os
@@ -34,73 +34,95 @@ def log_download(title, url, format_type, path):
 	conn.commit()
 
 # --- Fonction principale de téléchargement ---
-def download_video(url, path, audio_only, format_source):
+def download_media(url, path, audio_only, format_source):
 	try:
+		if format_source == "Playlist audio":
+			playlist = Playlist(url)
+
+			for url in playlist.video_urls :
+				yt = YouTube(url)
+				title = re.sub(r'[\\/:*?"<>|]', '', yt.title) # Récupère le titre de la vidéo
+				download_audio(yt, title, url, path)
+			
+			messagebox.showinfo("Succès", "Playlist de fichiers MP3 téléchargée avec succès !")
+			return
+
+		# Si format_source != "Playlist audio"
 		yt = YouTube(url)
-		title = re.sub(r'[\\/:*?"<>|]', '', yt.title)
+		title = re.sub(r'[\\/:*?"<>|]', '', yt.title) # Récupère le titre de la vidéo
 
 		if audio_only:
-			stream = yt.streams.get_audio_only()
-			downloaded_file = stream.download(output_path=path)
-
-			base, _ = os.path.splitext(downloaded_file)
-			mp3_file = base + ".mp3"
-
-			audio = AudioSegment.from_file(downloaded_file, format="m4a")
-			audio.export(mp3_file, format="mp3", bitrate="320k")
-			os.remove(downloaded_file)
-
-			log_download(title, url, "Audio", mp3_file)
-			update_counter()
+			download_audio(yt, title, url, path)
 			messagebox.showinfo("Succès", "Fichier MP3 téléchargé et converti avec succès !")
 
 		else:
-			# Récupère la résolution vidéo choisie
-			format = format_source.split(" ")[-1]
-
-			# Télécharger l'image et l'audio séparément
-			video_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True, res=format).first()
-			audio_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).first()
-
-			if not video_stream or not audio_stream:
-				raise Exception("Flux vidéo ", format, " ou audio introuvable.")
-
-			video_path = video_stream.download(output_path=path, filename="temp_video.mp4")
-			audio_path = audio_stream.download(output_path=path, filename="temp_audio.mp4")
-
-			base_audio, _ = os.path.splitext(audio_path)
-			converted_audio_file = base_audio + "_320.mp3"
-			audio = AudioSegment.from_file(audio_path, format="mp4")
-			audio.export(converted_audio_file, format="mp3", bitrate="320k")
-
-			output_path = os.path.join(path, f"{title}.mp4")
-
-			# Fusionner avec ffmpeg
-			cmd = [
-				"ffmpeg",
-				"-i", video_path,
-				"-i", converted_audio_file,
-				"-c:v", "copy",
-				"-c:a", "aac",
-				"-b:a", "320k",
-				"-strict", "experimental",
-				output_path
-			]
-			subprocess.run(cmd, check=True)
-
-			# Nettoyer les fichiers temporaires
-			os.remove(video_path)
-			os.remove(audio_path)
-			os.remove(converted_audio_file)
-
-			log_download(title, url, format_source, output_path)
-			update_counter()
-			messagebox.showinfo("Succès", f"Vidéo téléchargée en {format} avec succès !")
+			download_video(yt, title, format_source, url, path)
+			messagebox.showinfo("Succès", f"Vidéo téléchargée en {format_message} avec succès !")
 
 	except Exception as e:
 		messagebox.showerror("Erreur", f"Téléchargement échoué: {e}")
 
 # --- Autres fonctions ---
+def download_audio(yt, title, url, path):
+	stream = yt.streams.get_audio_only()
+	downloaded_file = stream.download(output_path=path)
+
+	base, _ = os.path.splitext(downloaded_file)
+	mp3_file = base + ".mp3"
+
+	audio = AudioSegment.from_file(downloaded_file, format="m4a")
+	audio.export(mp3_file, format="mp3", bitrate="320k")
+	os.remove(downloaded_file)
+
+	log_download(title, url, "Audio", mp3_file)
+	update_counter()
+
+def download_video(yt, title, format_source, url, path):
+	# Récupère la résolution vidéo choisie
+	format = format_source.split(" ")[-1]
+
+	# Met la résolution choisie en variable globale pour le messagebox de fin
+	global format_message
+	format_message = format
+
+	# Télécharger l'image et l'audio séparément
+	video_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True, res=format).first()
+	audio_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).first()
+
+	if not video_stream or not audio_stream:
+		raise Exception("Flux vidéo ", format, " ou audio introuvable.")
+
+	video_path = video_stream.download(output_path=path, filename="temp_video.mp4")
+	audio_path = audio_stream.download(output_path=path, filename="temp_audio.mp4")
+
+	base_audio, _ = os.path.splitext(audio_path)
+	converted_audio_file = base_audio + "_320.mp3"
+	audio = AudioSegment.from_file(audio_path, format="mp4")
+	audio.export(converted_audio_file, format="mp3", bitrate="320k")
+
+	output_path = os.path.join(path, f"{title}.mp4")
+
+	# Fusionner avec ffmpeg
+	cmd = [
+		"ffmpeg",
+		"-i", video_path,
+		"-i", converted_audio_file,
+		"-c:v", "copy",
+		"-c:a", "aac",
+		"-b:a", "320k",
+		"-strict", "experimental",
+		output_path
+	]
+	subprocess.run(cmd, check=True)
+
+	# Nettoyer les fichiers temporaires
+	os.remove(video_path)
+	os.remove(audio_path)
+	os.remove(converted_audio_file)
+
+	log_download(title, url, format_source, output_path)
+	update_counter()
+
 def start_download():
 	url = url_entry.get()
 	path = path_entry.get()
@@ -108,7 +130,7 @@ def start_download():
 
 	if url and path:
 		audio_only = (selected_format == "Audio")
-		download_video(url, path, audio_only, selected_format)
+		download_media(url, path, audio_only, selected_format)
 	else:
 		messagebox.showwarning("Attention", "Veuillez fournir une URL et un chemin de téléchargement.")
 
@@ -161,7 +183,7 @@ def show_history():
 
 # --- Interface graphique ---
 root = tk.Tk()
-root.title("DownPload - YouTube Downloader")
+root.title("Downpload - YouTube Downloader")
 root.geometry("400x430")
 root.resizable(False, False)
 
@@ -181,7 +203,7 @@ logo_label2 = tk.Label(header_frame, image=logo_tk)
 logo_label2.pack(side="right", padx=(10, 0))
 
 # Titre
-header_text = tk.Label(header_frame, text="DownPload", font=("Helvetica", 14, "bold"))
+header_text = tk.Label(header_frame, text="Downpload", font=("Helvetica", 14, "bold"))
 header_text.pack(side="left")
 
 # Icon de l'application
@@ -193,7 +215,7 @@ root.iconphoto(False, render)
 root.iconbitmap(icon_path)
 
 # Entrée pour URL
-url_label = tk.Label(root, text="URL de la vidéo YouTube :")
+url_label = tk.Label(root, text="URL de la vidéo/playlist YouTube :")
 url_label.pack(pady=(20,0))
 url_entry = ttk.Entry(root, width=50)
 url_entry.pack(pady=5)
@@ -201,9 +223,9 @@ url_entry.pack(pady=5)
 # Choix du format
 format_label = tk.Label(root, text="Format :")
 format_label.pack(pady=(20,0))
-format_var = tk.StringVar(value="Video 1080p")
-format_choice = ttk.Combobox(root, textvariable=format_var, values=["Audio", "Video 240p", "Video 360p", "Video 480p", "Video 720p", "Video 1080p"])
-format_choice.pack(pady=5)
+format_var = tk.StringVar(value="Audio")
+format_choice = ttk.Combobox(root, textvariable=format_var, values=["Audio", "Playlist audio", "Video 240p", "Video 360p", "Video 480p", "Video 720p", "Video 1080p"])
+format_choice.pack(pady=8)
 
 # Entrée pour chemin de téléchargement
 path_label = tk.Label(root, text="Dossier de téléchargement :")

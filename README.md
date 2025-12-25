@@ -1,6 +1,6 @@
-# 🎵📥 DownPload - YouTube Downloader
+# 🎵📥 Downpload - YouTube Downloader
 
-DownPload est une petite application de bureau en Python (Tkinter) permettant de télécharger facilement des vidéos ou de la musique depuis YouTube, au format MP4 ou MP3.  
+Downpload est une petite application de bureau en Python (Tkinter) permettant de télécharger facilement des vidéos ou de la musique depuis YouTube, au format MP4 ou MP3, ou bien une playlist d'audio en MP3.  
 Une base de données SQLite intégrée garde la trace de tous vos téléchargements 📊.
 
 ***Dû à Pytubefix qui n'est pas encore à jour au 14/04/2025, l'application bureau tourne au maximum avec Python 3.12.2***
@@ -9,8 +9,9 @@ Une base de données SQLite intégrée garde la trace de tous vos téléchargeme
 
 ## ⚙️ Fonctionnalités
 
-- Téléchargement de vidéos YouTube en qualité maximale (1080p en MP4)
+- Téléchargement de vidéos YouTube en qualité maximale (1080p en MP4) (via `ffmpeg`)
 - Téléchargement d'audio uniquement, avec conversion en MP3 (via `ffmpeg`)
+- Téléchargement de playlist d'audio (via `ffmpeg`)
 - Interface simple et intuitive avec `Tkinter`
 - Historique automatique des téléchargements (SQLite)
 - Compatible Windows
@@ -21,7 +22,7 @@ Une base de données SQLite intégrée garde la trace de tous vos téléchargeme
 
 ### 1. Clonez le repo
 ```bash
-git clone https://github.com/FoxW-Lois/DownPload.git
+git clone https://github.com/FoxW-Lois/Downpload.git
 cd downpload
 ```
 
