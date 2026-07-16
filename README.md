@@ -7,6 +7,12 @@ Une base de données SQLite intégrée garde la trace de tous vos téléchargeme
 
 ---
 
+## 🧠 Objectifs
+
+Ce projet est libre d'utilisation et de modification, mais toute redistribution modifiée doit rester libre et conserver l'attribution originale. Pour assurer cela il est indispensable de respecter la licence GNU GPL v3.
+
+---
+
 ## ⚙️ Fonctionnalités
 
 - Téléchargement de vidéos YouTube en qualité maximale (1080p en MP4) (via `ffmpeg`)
