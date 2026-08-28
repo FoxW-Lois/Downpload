@@ -40,7 +40,7 @@ def download_media(url, path, audio_only, format_source):
 			playlist = Playlist(url)
 
 			for url in playlist.video_urls :
-				yt = YouTube(url)
+				yt = YouTube(url, "WEB")
 				title = re.sub(r'[\\/:*?"<>|]', '', yt.title) # Récupère le titre de la vidéo
 				download_audio(yt, title, url, path)
 			
@@ -48,7 +48,7 @@ def download_media(url, path, audio_only, format_source):
 			return
 
 		# Si format_source != "Playlist audio"
-		yt = YouTube(url)
+		yt = YouTube(url, "WEB")
 		title = re.sub(r'[\\/:*?"<>|]', '', yt.title) # Récupère le titre de la vidéo
 
 		if audio_only:
