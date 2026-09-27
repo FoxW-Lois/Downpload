@@ -3,8 +3,6 @@
 Downpload est une petite application de bureau en Python (Tkinter) permettant de télécharger facilement des vidéos ou de la musique depuis YouTube, au format MP4 ou MP3, ou bien une playlist d'audio en MP3.  
 Une base de données SQLite intégrée garde la trace de tous vos téléchargements 📊.
 
-***Dû à Pytubefix qui n'est pas encore à jour au 14/04/2025, l'application bureau tourne au maximum avec Python 3.12.2***
-
 ---
 
 ## 🧠 Objectifs
